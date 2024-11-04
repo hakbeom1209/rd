@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="viewport" content="width=device-width, initial-scale=1.0">
+    <title>난수 생성기 테스트</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+        }
+        #output {
+            white-space: pre;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1>난수 생성기 테스트</h1>
+    <input type="file" id="fileInput" />
+    <button onclick="startAnalysis()">분석 시작</button>
+
+    <div id="output"></div>
+
+    <script>
+        function input(data, random, frequency) {
+            const lines = data.split('\n');
+            let number;
+
+            for (let i = 0; i < 100; i++) {
+                if (lines[i]) {
+                    const match = lines[i].match(/-> ([0-9.]+)/);
+                    if (match) {
+                        number = parseFloat(match[1]);
+                        let place = Math.floor(number * 10) % 10;
+                        random[i] = place;
+                        frequency[place]++;
+                    }
+                } else {
+                    document.getElementById('output').innerText = '파일에 충분한 데이터가 없습니다.';
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        function startAnalysis() {
+            const fileInput = document.getElementById('fileInput');
+            const file = fileInput.files[0];
+            
+            if (!file) {
+                document.getElementById('output').innerText = '님 파일 안넣음';
+                return;
+            }
+
+            document.getElementById('output').innerText = '분석 중...';
+            setTimeout(analyzeFile, 2000);
+        }
+
+        function analyzeFile() {
+            const fileInput = document.getElementById('fileInput');
+            const file = fileInput.files[0];
+
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                const data = event.target.result;
+                let random = new Array(100).fill(0);
+                let frequency = new Array(10).fill(0);
+                let sort = Array.from({ length: 10 }, () => Array(10).fill(0)); 
+
+                if (!input(data, random, frequency)) return;
+
+                for (let i = 0; i < 99; i++) {
+                    sort[random[i]][random[i + 1]]++;
+                }
+
+                let output = '';
+
+                // 독립성 데이터 출력 및 평균, 분산, 표준편차 계산
+                output += '각 숫자 뒤에 나오는 숫자의 빈도 (독립성 데이터):\n';
+                let frequencies = []; 
+                for (let i = 0; i < 10; i++) {
+                    for (let j = 0; j < 10; j++) {
+                        output += `${i} 뒤에 ${j} 나온 횟수: ${sort[i][j]}번\n`;
+                        frequencies.push(sort[i][j]); 
+                    }
+                }
+
+                let indAvg = frequencies.reduce((a, b) => a + b, 0) / frequencies.length;
+                let indVar = frequencies.reduce((a, b) => a + (b - indAvg) ** 2, 0) / frequencies.length;
+                let indStdDev = Math.sqrt(indVar);
+
+                output += `\n독립성 데이터의 평균: ${indAvg.toFixed(2)}\n`;
+                output += `분산: ${indVar.toFixed(2)}, 표준편차: ${indStdDev.toFixed(2)}\n`;
+
+                // 각 숫자의 빈도 출력 및 평균, 분산, 표준편차 계산
+                output += '\n각 숫자의 빈도:\n';
+                let freqAvg = frequency.reduce((a, b) => a + b, 0) / frequency.length;
+                let freqVar = frequency.reduce((a, b) => a + (b - freqAvg) ** 2, 0) / frequency.length;
+                let freqStdDev = Math.sqrt(freqVar);
+
+                for (let i = 0; i < 10; i++) {
+                    output += `${i} : ${frequency[i]}번\n`;
+                }
+
+                output += `\n빈도의 평균: ${freqAvg.toFixed(2)}\n`;
+                output += `분산: ${freqVar.toFixed(2)}, 표준편차: ${freqStdDev.toFixed(2)}\n`;
+
+                document.getElementById('output').innerText = output;
+            };
+
+            reader.readAsText(file);
+        }
+    </script>
+</body>
+</html>
