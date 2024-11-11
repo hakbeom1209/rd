@@ -17,10 +17,14 @@
     <h1>난수 생성기 테스트</h1>
     <input type="file" id="fileInput" />
     <button onclick="startAnalysis()">분석 시작</button>
+    <button onclick="showRankings()">등수 보기</button>
 
     <div id="output"></div>
 
     <script>
+        // 분석된 표준편차 값을 저장할 배열
+        const results = [];
+
         function input(data, random, frequency) {
             const lines = data.split('\n');
             let number;
@@ -74,13 +78,11 @@
 
                 let output = '';
 
-                // 독립성 데이터 출력 및 평균, 분산, 표준편차 계산
-                output += '각 숫자 뒤에 나오는 숫자의 빈도 (독립성 데이터):\n';
-                let frequencies = []; 
+                // 독립성 데이터 표준편차 계산
+                let frequencies = [];
                 for (let i = 0; i < 10; i++) {
                     for (let j = 0; j < 10; j++) {
-                        output += `${i} 뒤에 ${j} 나온 횟수: ${sort[i][j]}번\n`;
-                        frequencies.push(sort[i][j]); 
+                        frequencies.push(sort[i][j]);
                     }
                 }
 
@@ -88,26 +90,45 @@
                 let indVar = frequencies.reduce((a, b) => a + (b - indAvg) ** 2, 0) / frequencies.length;
                 let indStdDev = Math.sqrt(indVar);
 
-                output += `\n독립성 데이터의 평균: ${indAvg.toFixed(2)}\n`;
-                output += `분산: ${indVar.toFixed(2)}, 표준편차: ${indStdDev.toFixed(2)}\n`;
-
-                // 각 숫자의 빈도 출력 및 평균, 분산, 표준편차 계산
-                output += '\n각 숫자의 빈도:\n';
+                // 빈도 데이터 표준편차 계산
                 let freqAvg = frequency.reduce((a, b) => a + b, 0) / frequency.length;
                 let freqVar = frequency.reduce((a, b) => a + (b - freqAvg) ** 2, 0) / frequency.length;
                 let freqStdDev = Math.sqrt(freqVar);
 
-                for (let i = 0; i < 10; i++) {
-                    output += `${i} : ${frequency[i]}번\n`;
-                }
+                // 결과 저장
+                results.push({ indStdDev, freqStdDev });
 
-                output += `\n빈도의 평균: ${freqAvg.toFixed(2)}\n`;
-                output += `분산: ${freqVar.toFixed(2)}, 표준편차: ${freqStdDev.toFixed(2)}\n`;
-
+                output += `\n독립성 데이터의 표준편차: ${indStdDev}\n`;
+                output += `빈도 데이터의 표준편차: ${freqStdDev}\n`;
                 document.getElementById('output').innerText = output;
             };
 
             reader.readAsText(file);
+        }
+
+        function showRankings() {
+            if (results.length === 0) {
+                document.getElementById('output').innerText = '아직 분석된 데이터가 없습니다.';
+                return;
+            }
+
+            // 독립성 표준편차 등수 계산
+            const indRankings = [...results].sort((a, b) => a.indStdDev - b.indStdDev);
+            const freqRankings = [...results].sort((a, b) => a.freqStdDev - b.freqStdDev);
+
+            let output = '등수 (낮은 표준편차일수록 높은 등수):\n\n';
+
+            output += '독립성 표준편차 등수:\n';
+            indRankings.forEach((item, index) => {
+                output += `${index + 1}등: 독립성 표준편차 = ${item.indStdDev}\n`;
+            });
+
+            output += '\n빈도 표준편차 등수:\n';
+            freqRankings.forEach((item, index) => {
+                output += `${index + 1}등: 빈도 표준편차 = ${item.freqStdDev}\n`;
+            });
+
+            document.getElementById('output').innerText = output;
         }
     </script>
 </body>
