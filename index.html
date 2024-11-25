@@ -1,7 +1,8 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-    <meta charset="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>난수 생성기 테스트</title>
     <style>
         body {
@@ -18,23 +19,19 @@
     <input type="file" id="fileInput" />
     <button onclick="startAnalysis()">분석 시작</button>
     <button onclick="showRankings()">등수 보기</button>
-
     <div id="output"></div>
 
     <script>
-        // 분석된 표준편차 값을 저장할 배열
         const results = [];
 
         function input(data, random, frequency) {
             const lines = data.split('\n');
-            let number;
-
             for (let i = 0; i < 100; i++) {
                 if (lines[i]) {
                     const match = lines[i].match(/-> ([0-9.]+)/);
                     if (match) {
-                        number = parseFloat(match[1]);
-                        let place = Math.floor(number * 10) % 10;
+                        const number = parseFloat(match[1]);
+                        const place = Math.floor(number * 10) % 10;
                         random[i] = place;
                         frequency[place]++;
                     }
@@ -49,12 +46,10 @@
         function startAnalysis() {
             const fileInput = document.getElementById('fileInput');
             const file = fileInput.files[0];
-            
             if (!file) {
-                document.getElementById('output').innerText = '님 파일 안넣음';
+                document.getElementById('output').innerText = '파일을 선택하세요.';
                 return;
             }
-
             document.getElementById('output').innerText = '분석 중...';
             setTimeout(analyzeFile, 2000);
         }
@@ -62,13 +57,13 @@
         function analyzeFile() {
             const fileInput = document.getElementById('fileInput');
             const file = fileInput.files[0];
-
             const reader = new FileReader();
+
             reader.onload = function(event) {
                 const data = event.target.result;
                 let random = new Array(100).fill(0);
                 let frequency = new Array(10).fill(0);
-                let sort = Array.from({ length: 10 }, () => Array(10).fill(0)); 
+                let sort = Array.from({ length: 10 }, () => Array(10).fill(0));
 
                 if (!input(data, random, frequency)) return;
 
@@ -77,8 +72,6 @@
                 }
 
                 let output = '';
-
-                // 독립성 데이터 표준편차 계산
                 let frequencies = [];
                 for (let i = 0; i < 10; i++) {
                     for (let j = 0; j < 10; j++) {
@@ -86,20 +79,25 @@
                     }
                 }
 
-                let indAvg = frequencies.reduce((a, b) => a + b, 0) / frequencies.length;
-                let indVar = frequencies.reduce((a, b) => a + (b - indAvg) ** 2, 0) / frequencies.length;
-                let indStdDev = Math.sqrt(indVar);
+                const indAvg = frequencies.reduce((a, b) => a + b, 0) / frequencies.length;
+                const indVar = frequencies.reduce((a, b) => a + (b - indAvg) ** 2, 0) / frequencies.length;
+                const indStdDev = Math.sqrt(indVar);
 
-                // 빈도 데이터 표준편차 계산
-                let freqAvg = frequency.reduce((a, b) => a + b, 0) / frequency.length;
-                let freqVar = frequency.reduce((a, b) => a + (b - freqAvg) ** 2, 0) / frequency.length;
-                let freqStdDev = Math.sqrt(freqVar);
+                const freqAvg = frequency.reduce((a, b) => a + b, 0) / frequency.length;
+                const freqVar = frequency.reduce((a, b) => a + (b - freqAvg) ** 2, 0) / frequency.length;
+                const freqStdDev = Math.sqrt(freqVar);
 
-                // 결과 저장
                 results.push({ indStdDev, freqStdDev });
 
-                output += `\n독립성 데이터의 표준편차: ${indStdDev}\n`;
-                output += `빈도 데이터의 표준편차: ${freqStdDev}\n`;
+                output += `독립성 데이터의 표준편차: ${indStdDev}\n`;
+                output += `빈도 데이터의 표준편차: ${freqStdDev}\n\n`;
+
+                let frequencyList = '';
+                for (let i = 0; i < 10; i++) {
+                    frequencyList += i.toString().repeat(frequency[i]);
+                }
+
+                output += `빈도 데이터 나열:\n${frequencyList}\n`;
                 document.getElementById('output').innerText = output;
             };
 
@@ -108,24 +106,21 @@
 
         function showRankings() {
             if (results.length === 0) {
-                document.getElementById('output').innerText = '아직 분석된 데이터가 없습니다.';
+                document.getElementById('output').innerText = '분석된 데이터가 없습니다.';
                 return;
             }
 
-            // 독립성 표준편차 등수 계산
             const indRankings = [...results].sort((a, b) => a.indStdDev - b.indStdDev);
             const freqRankings = [...results].sort((a, b) => a.freqStdDev - b.freqStdDev);
 
-            let output = '등수 (낮은 표준편차일수록 높은 등수):\n\n';
-
-            output += '독립성 표준편차 등수:\n';
+            let output = '등수:\n\n독립성 표준편차:\n';
             indRankings.forEach((item, index) => {
-                output += `${index + 1}등: 독립성 표준편차 = ${item.indStdDev}\n`;
+                output += `${index + 1}등: ${item.indStdDev}\n`;
             });
 
-            output += '\n빈도 표준편차 등수:\n';
+            output += '\n빈도 표준편차:\n';
             freqRankings.forEach((item, index) => {
-                output += `${index + 1}등: 빈도 표준편차 = ${item.freqStdDev}\n`;
+                output += `${index + 1}등: ${item.freqStdDev}\n`;
             });
 
             document.getElementById('output').innerText = output;
